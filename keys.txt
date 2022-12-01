@@ -1,0 +1,79 @@
+Password: password
+Secret phrase:       swarm rally donkey detail reunion bullet truck sauce have author certain seek
+  Network ID:        substrate
+  Secret seed:       0x342aeed0d9bfb6b92a20168cd5150becdc510c042b4cdb6eee19efe9f8741533
+  Public key (hex):  0xca4096f236bea5001001e9b03950dd320f306ecb9957e642d4c88489d8562372
+  Account ID:        0xca4096f236bea5001001e9b03950dd320f306ecb9957e642d4c88489d8562372
+  Public key (SS58): 5GdtiYEt5NpbZuSPexYbXQErsRjy4qQEgn8Ee3vzgM1jyuX7
+  SS58 Address:      5GdtiYEt5NpbZuSPexYbXQErsRjy4qQEgn8Ee3vzgM1jyuX7
+
+# SS58 Address is Sr25519 public key for producing blocks using aura
+# ./target/release/node-template key inspect --password-interactive --scheme Ed25519 "swarm rally donkey detail reunion bullet truck sauce have author certain seek"
+# ^^ this command to derive keys using Ed25519 signature scheme: 
+Secret phrase:       swarm rally donkey detail reunion bullet truck sauce have author certain seek
+  Network ID:        substrate
+  Secret seed:       0x342aeed0d9bfb6b92a20168cd5150becdc510c042b4cdb6eee19efe9f8741533
+  Public key (hex):  0xf9dfabfb7b0e0e5f38bf1689d70be84e83dd4e66306c7421bc323ba214968d85
+  Account ID:        0xf9dfabfb7b0e0e5f38bf1689d70be84e83dd4e66306c7421bc323ba214968d85
+  Public key (SS58): 5HiLDzfx7SWHF4snENErcBzXfdJaiWTGz3wDW3mUGpioLncK
+  SS58 Address:      5HiLDzfx7SWHF4snENErcBzXfdJaiWTGz3wDW3mUGpioLncK
+
+# SS58 Address is Ed25519 key for finalizing blocks using grandpa
+
+# Second set of keys:
+#Aura Sr25519
+Secret phrase:       wall ten universe culture gift video unaware basic farm trip champion symbol
+  Network ID:        substrate
+  Secret seed:       0x4c51c2dc6290fa4f9449e992079f7d89f9f302debb3aa1fe571b61fbda836627
+  Public key (hex):  0x4cfe6ddc19371bce88d5eb5908615e413c95eced7bdab8c0946cc780e9d27a0a
+  Account ID:        0x4cfe6ddc19371bce88d5eb5908615e413c95eced7bdab8c0946cc780e9d27a0a
+  Public key (SS58): 5Dof5TS5uSxjoNDWPKR2PpLtyHpLdQLNiqRzUMm7e31UjFSV
+  SS58 Address:      5Dof5TS5uSxjoNDWPKR2PpLtyHpLdQLNiqRzUMm7e31UjFSV
+
+#Grandpa Ed25519
+Secret phrase:       wall ten universe culture gift video unaware basic farm trip champion symbol
+  Network ID:        substrate
+  Secret seed:       0x4c51c2dc6290fa4f9449e992079f7d89f9f302debb3aa1fe571b61fbda836627
+  Public key (hex):  0xc1d21f0a427a4c033ccfc709a85cb71f03c8bea82b454853e4d7cb61866fbd87
+  Account ID:        0xc1d21f0a427a4c033ccfc709a85cb71f03c8bea82b454853e4d7cb61866fbd87
+  Public key (SS58): 5GSqWzfQoMEengFG7hXWgGjQ3S9cgNGrwSPWgL6YpQrGY2o3
+  SS58 Address:      5GSqWzfQoMEengFG7hXWgGjQ3S9cgNGrwSPWgL6YpQrGY2o3
+
+
+  doll trumpet fatal still bracket supply artefact deputy race afford stage bicycle
+
+"Any node can issue extrinsics that affect the behavior of other nodes, as long as it is on chain data that is used for reference, and you have the singing key in the keystore available for the account in question for the required origin"
+
+# Running two nodes (run alice first, then bob)
+```
+./target/release/node-template \
+--chain=local \
+--base-path /tmp/validator1 \
+--alice \
+--node-key=c12b6d18942f5ee8528c8e2baf4e147b5c5c18710926ea492d09cbd9f6c9f82a \
+--port 30333 \
+--ws-port 9944
+```
+
+```
+./target/release/node-template \
+--chain=local \
+--base-path /tmp/validator2 \
+--bob \
+--node-key=6ce3be907dbcabf20a9a5a60a712b4256a54196000a8ed4050d352bc113f8c58 \
+--port 30334 \
+--ws-port 9945
+```
+
+```
+./target/release/node-template \
+--chain=local \
+--base-path /tmp/validator3 \
+--name charlie  \
+--node-key=3a9d5b35b9fb4c42aafadeca046f6bf56107bd2579687f069b42646684b94d9e \
+--port 30335 \
+--ws-port=9946 \
+--offchain-worker always
+```
+
+std vs no_std, std is native Rust binary, assumes you have stuff like memory, normal computer stuff. no_std is compiling for wasm
