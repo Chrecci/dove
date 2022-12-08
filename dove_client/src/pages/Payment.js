@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, SafeAreaView, Pressable, Button, StyleSheet, TextInput, Alert } from 'react-native';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 // import keyring from '@polkadot/ui-keyring';
 import { Keyring } from '@polkadot/keyring';
@@ -11,16 +11,45 @@ import {
   } from '@polkadot/util-crypto';
 var { encodeAddress } = require('@polkadot/util-crypto')
 import { isTestChain } from '@polkadot/util'
+import { set } from 'react-native-reanimated';
 
+const TextBoxStyle = StyleSheet.create({
+    input: {
+        width: 200,
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+    },
+});
+
+const SubmitButtonStyle = StyleSheet.create({
+    input: {
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+        backgroundColor: "red",
+    },
+});
 
 function Payment({ navigation }) {
+    //TODO: all this should be passed down as context ideally
     // Construct
+    const [address, onChangeAddress] = useState("");
+    const [amount, onChangeAmount] = useState(null);
+    const [sender, setSender] = useState(null);
+    const [recipient, setRecipient] = useState(null);
+
+
     const wsProvider = new WsProvider('ws://127.0.0.1:9945');
+    
 
     async function connect() {
         const keyring = new Keyring({ type: 'sr25519' });
 
         const api = await ApiPromise.create({ provider: wsProvider });
+        
         // Confirm genesis hash
         console.log(api.genesisHash.toHex());
         
@@ -52,6 +81,18 @@ function Payment({ navigation }) {
         // add existing accounts to keyring through hard derivations https://polkadot.js.org/docs/keyring/start/suri
         const rando = keyring.addFromUri('//5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY')
         const rando1 = keyring.addFromUri('//5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy')
+
+        if (!sender) {
+            setSender(rando)
+        }
+        if (!recipient) {
+            setRecipient(rando1)
+        }
+        
+        console.log('sender', sender)
+        console.log('recipient', recipient)
+        console.log(`${rando.meta.name}: has address ${rando.address} with publicKey [${rando.publicKey}]`);
+
         const rando2 = keyring.addFromUri('//5GsYgNoJasVspbqftfmPRtcGqZ8UDnmwhu8HeAEkd2LhcV8S')
         console.log(keyring.getPairs(), keyring.getPairs().length)
 
@@ -81,13 +122,59 @@ function Payment({ navigation }) {
         
         }
     connect();
-     
+    async function transfer() {
+        const api = await ApiPromise.create({ provider: wsProvider });
+        const keyring = new Keyring({ type: 'sr25519' });
+        const alice = keyring.addFromUri('//Alice')
+        console.log('sender transfer', alice)
+        console.log('recipient transfer', recipient)
+        const unsub = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy'], (balances) => {
+            const [{ data: balance1 }, { data: balance2 }] = balances;
+          
+            console.log(`The balances are ${balance1.free} and ${balance2.free}`);
+          });
+        const transfer = api.tx.balances.transfer('5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy', 64);
+
+        // Sign and send the transaction using our account
+        const hash = await transfer.signAndSend(alice);
+        
+        console.log('Transfer sent with hash', hash.toHex());
+        
+
+    }
+    
+    const onSubmit = () => {
+        return navigation.navigate('Profile')
+    }
     return (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text
-                onPress={() => navigation.navigate('Profile')}
-                style={{ fontSize: 26, fontWeight: 'bold' }}>Go to Profile</Text>
-        </View>
+        <SafeAreaView style={{ flex: 1 , alignItems: 'center'}}>
+            <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', width: '80%', marginTop: '20%'}}>
+                    <Text
+                        style={{ fontSize: 26, fontWeight: 'bold' }}>Payment Page
+                    </Text>
+            </SafeAreaView>  
+            <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
+                <TextInput
+                    style={TextBoxStyle.input}
+                    onChangeText={onChangeAddress}
+                    value={address}
+                    placeholder="Enter Recipient Address Here"
+                />
+                <TextInput
+                    style={TextBoxStyle.input}
+                    onChangeText={onChangeAmount}
+                    value={amount}
+                    placeholder="Amount of Tokens"
+                    keyboardType="numeric"
+                />
+                <Pressable
+                    onPress={recipient ? transfer : onSubmit}
+                    style={SubmitButtonStyle.input}
+                >
+                    <Text>Submit Transaction</Text>
+                </Pressable>
+            </SafeAreaView>
+        </SafeAreaView>
     );
 }
 
