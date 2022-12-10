@@ -57,7 +57,7 @@ function App() {
           tabBarStyle: {
             paddingVertical: Platform.OS === 'ios' ? 10 : 0,
             height: 90,
-            backgroundColor: "black"
+            backgroundColor: "white"
           }
         })
       }
