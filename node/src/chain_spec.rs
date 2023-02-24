@@ -39,9 +39,14 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
+use serde_json::json;
+use sc_service::Properties;
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+	let mut props : Properties = Properties::new();
 
+    let value = json!("DOVED");
+    props.insert("tokenSymbol".to_string(), value);
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -73,7 +78,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(props),
 		// Extensions
 		None,
 	))
@@ -81,7 +86,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-
+	
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",

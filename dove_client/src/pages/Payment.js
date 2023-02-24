@@ -49,7 +49,10 @@ function Payment({ navigation }) {
         const keyring = new Keyring({ type: 'sr25519' });
 
         const api = await ApiPromise.create({ provider: wsProvider });
-        
+        const chainInfo = await api.registry.getChainProperties()
+
+        console.log(chainInfo);
+
         // Confirm genesis hash
         console.log(api.genesisHash.toHex());
         
