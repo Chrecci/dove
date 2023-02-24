@@ -70,14 +70,14 @@ function Payment({ navigation }) {
             `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
         );
 
-        const createAccount = (mnemonic) => {
-            mnemonic = mnemonic && mnemonicValidate(mnemonic) 
-                 ? mnemonic 
-                 : mnemonicGenerate();
-            const account = keyring.addFromUri(mnemonic);
-            return { account, mnemonic };
-        }
-        createAccount(); 
+        // const createAccount = (mnemonic) => {
+        //     mnemonic = mnemonic && mnemonicValidate(mnemonic) 
+        //          ? mnemonic 
+        //          : mnemonicGenerate();
+        //     const account = keyring.addFromUri(mnemonic);
+        //     return { account, mnemonic };
+        // }
+        // console.log("CREAITING ACCOUNT", createAccount()); 
         // add existing accounts to keyring through hard derivations https://polkadot.js.org/docs/keyring/start/suri
         const rando = keyring.addFromUri('//5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY')
         const rando1 = keyring.addFromUri('//5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy')
@@ -88,15 +88,84 @@ function Payment({ navigation }) {
         if (!recipient) {
             setRecipient(rando1)
         }
-        
         console.log('sender', sender)
         console.log('recipient', recipient)
         console.log(`${rando.meta.name}: has address ${rando.address} with publicKey [${rando.publicKey}]`);
 
         const rando2 = keyring.addFromUri('//5GsYgNoJasVspbqftfmPRtcGqZ8UDnmwhu8HeAEkd2LhcV8S')
-        console.log(keyring.getPairs(), keyring.getPairs().length)
+        console.log("ALL PAIRS", keyring.getPairs(), keyring.getPairs().length)
 
         // Adjust how many accounts to query at once.
+        let limit = 50;
+        let result = [];
+        let last_key = "";
+    
+        // while (true) {
+        //     let query = await api.query.system.account.entriesPaged({ args: [], pageSize: limit, startKey: last_key });
+        //     console.log("LENGTH", query.length)
+        //     if (query.length == 0) {
+        //         break
+        //     }
+    
+        //     for (const user of query) {
+        //         let account_id = encodeAddress(user[0].slice(-32));
+        //         let free_balance = user[1].data.free.toString();
+        //         let reserved_balance = user[1].data.reserved.toString();
+        //         result.push({ account_id, free_balance, reserved_balance });
+        //         last_key = user[0];
+        //     }
+        // }
+
+        // console.log(result)
+
+        
+        }
+    connect();  
+    async function transfer() {
+        const api = await ApiPromise.create({ provider: wsProvider });
+        const keyring = new Keyring({ type: 'sr25519' });
+        const alice = keyring.addFromUri('//Alice')
+        console.log('sender transfer', alice)
+        console.log('recipient transfer', recipient)
+        // const createAccount = (mnemonic) => {
+        //     mnemonic = mnemonic && mnemonicValidate(mnemonic) 
+        //          ? mnemonic 
+        //          : mnemonicGenerate();
+        //     const account = keyring.addFromUri(mnemonic, "supersecurepassword");
+        //     return { account, mnemonic };
+        // }
+        // console.log("CREAITING ACCOUNT", createAccount()); 
+        const test_user = keyring.addFromMnemonic('illness gossip weapon vast cable wet write depart angry used leaf leisure')
+        const test_user1 = keyring.addFromMnemonic('walk cupboard parrot combine arena inquiry stereo talk sense maple action neutral')
+        console.log("TEST TRANSFER PAIRS", keyring.getPairs(), keyring.getPairs().length)
+        console.log("TEST USER ADDRESSES", test_user["address"], test_user1["address"])
+        const unsub = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', test_user["address"], test_user1["address"]], (balances) => {
+            const [{ data: balance1 }, { data: balance2 }, { data: balance3 }] = balances;
+          
+            console.log(`The balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()} and ${balance3.free.toHuman()}`);
+          });
+        const transfer = api.tx.balances.transfer(test_user1["address"], 10);
+        const info = await api.tx.balances
+        .transfer(test_user1["address"], 1001)
+        .paymentInfo(test_user);
+
+        // log relevant info, partialFee is Balance, estimated for current
+        console.log(`
+        class=${info.class.toString()},
+        weight=${info.weight.toString()},
+        partialFee=${info.partialFee.toHuman()}
+        `);
+        // Sign and send the transaction using our account
+        const hash = await transfer.signAndSend(alice);
+        
+        console.log('Transfer sent with hash', hash.toHex());
+        const unsub1 = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', test_user["address"], test_user1["address"]], (balances) => {
+            const [{ data: balance1 }, { data: balance2 }, { data: balance3 }] = balances;
+          
+            console.log(`The new balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()} and ${balance3.free.toHuman()}`);
+          });
+        
+          // Adjust how many accounts to query at once.
         let limit = 50;
         let result = [];
         let last_key = "";
@@ -117,29 +186,7 @@ function Payment({ navigation }) {
             }
         }
     
-        console.log(result)
-
-        
-        }
-    connect();
-    async function transfer() {
-        const api = await ApiPromise.create({ provider: wsProvider });
-        const keyring = new Keyring({ type: 'sr25519' });
-        const alice = keyring.addFromUri('//Alice')
-        console.log('sender transfer', alice)
-        console.log('recipient transfer', recipient)
-        const unsub = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy'], (balances) => {
-            const [{ data: balance1 }, { data: balance2 }] = balances;
-          
-            console.log(`The balances are ${balance1.free} and ${balance2.free}`);
-          });
-        const transfer = api.tx.balances.transfer('5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy', 64);
-
-        // Sign and send the transaction using our account
-        const hash = await transfer.signAndSend(alice);
-        
-        console.log('Transfer sent with hash', hash.toHex());
-        
+        console.log(" RESULTS", result)
 
     }
     
