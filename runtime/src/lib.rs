@@ -47,7 +47,7 @@ pub use frame_support::{
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		IdentityFee, Weight,
+		IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeePolynomial
 	},
 	StorageValue,
 };
@@ -306,7 +306,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type Event = Event;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<500>;
+	type ExistentialDeposit = ConstU128<10>;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
@@ -337,14 +337,61 @@ impl pallet_nicks::Config for Runtime {
 	type Event = Event;
 }
 
+// https://docs.substrate.io/build/tx-weights-fees/
+// https://docs.substrate.io/reference/how-to-guides/weights/calculate-fees/
+use frame_support::weights::WeightToFeeCoefficients;
+use sp_runtime::traits::Get;
+use smallvec::smallvec;
+
+pub struct LinearWeightToFee<C>(sp_std::marker::PhantomData<C>);
+
+impl<C> WeightToFeePolynomial for LinearWeightToFee<C>
+where
+	C: Get<Balance>,
+{
+	type Balance = Balance;
+
+	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		let coefficient = WeightToFeeCoefficient {
+			coeff_integer: C::get(),
+			coeff_frac: Perbill::zero(),
+			negative: false,
+			degree: 1,
+		};
+
+		smallvec!(coefficient)
+	}
+}
+
+parameter_types! {
+    // Used with LinearWeightToFee conversion.
+	pub const FeeWeightRatio: u128 = 10;
+	// Establish the byte-fee. It is used in all configurations.
+	pub const TransactionByteFee: u128 = 0;
+}
+
+use frame_support::weights::ConstantMultiplier;
 impl pallet_transaction_payment::Config for Runtime {
 	type Event = Event;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type OperationalFeeMultiplier = ConstU8<5>;
-	type WeightToFee = IdentityFee<Balance>;
-	type LengthToFee = IdentityFee<Balance>;
-	type FeeMultiplierUpdate = ();
+	// type TransactionByteFee = TransactionByteFee;
+
+	// Convert dispatch weight to a chargeable fee.
+    type OperationalFeeMultiplier = ConstU8<5>;
+    type WeightToFee = ConstantMultiplier<Balance, ConstU128<0u128>>;
+    type LengthToFee = ConstantMultiplier<Balance, ConstU128<0u128>>;
+    type FeeMultiplierUpdate = ();
 }
+
+
+// impl pallet_transaction_payment::Config for Runtime {
+// 	type Event = Event;
+// 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+// 	type OperationalFeeMultiplier = ConstU8<5>;
+// 	type WeightToFee = IdentityFee<Balance>;
+// 	type LengthToFee = IdentityFee<Balance>;
+// 	type FeeMultiplierUpdate = ();
+// }
 
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
