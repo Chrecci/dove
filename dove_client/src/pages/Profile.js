@@ -36,10 +36,14 @@ function Profile({ navigation }) {
     const [accountInfo, setAccountInfo] = useState({});
     const [password, onChangePassword] = useState("");
     const [mnemonicInput, onChangeMnemonicInput] = useState("");
-    const wsProvider = new WsProvider('ws://127.0.0.1:9945');
-    console.log("mnemonic: ", mnemonic)
+    
+    AsyncStorage.getItem('mnemonic').then(
+        // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
+        (data) => data !== null ? setMnemonic(data.slice(1, -1)) : console.log("nonexistent recipient")
+    );
 
     async function connect() {
+        const wsProvider = new WsProvider('ws://127.0.0.1:9945');
         const api = await ApiPromise.create({ provider: wsProvider });
         const chainInfo = await api.registry.getChainProperties()
 
@@ -102,21 +106,24 @@ function Profile({ navigation }) {
     const addExistingMnemonic = async () => {
         const api = await connect(); 
         const keyring = new Keyring({ type: 'sr25519' });
-        if (mnemonicInput.length >= 8) {
-            console.log("ENTERED MNEMONIC: ", mnemonicInput)
+        if (mnemonicValidate(mnemonicInput)) {
+            console.log("VALID MNEMONIC: ", mnemonicInput)
             await storeMnemonic(mnemonicInput)
         } else {
-            Toast.show("Must enter full mnemonic phrase", 5)
+            Toast.show("Must enter a valid mnemonic", 5)
         }
-
-        
     }
 
+    const clearStorage = async () => {
+        AsyncStorage.clear().then((res) => console.log(res));
+        await setMnemonic(null)
+    }
     
     return (
         mnemonic ?
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text
+                onPress={clearStorage}
                 style={{ fontSize: 12, fontWeight: 'bold' }}>{mnemonic}
             </Text>
         </View> :
