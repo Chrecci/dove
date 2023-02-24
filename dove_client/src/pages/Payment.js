@@ -47,11 +47,13 @@ function Payment({ navigation }) {
     const [sender, setSender] = useState(null);
     const [recipient, setRecipient] = useState(null);
 
-
+    // This basically always runs looking to see if local storage still has value. If not, then resets recipient state as well, so we don't have to do it manually
+    // This works really well for setting a single state. Can't set two states because they both keep triggering re-renders, breaking code
     AsyncStorage.getItem('mnemonic').then(
         // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
-        (data) => data !== null ? setRecipient(data.slice(1, -1)) : setRecipient(null)
+        (data) => data !== null ? setRecipient(JSON.parse(data)) : setRecipient(null)
     );
+
     console.log("RECIPIENT: ", recipient)
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
@@ -175,10 +177,14 @@ function Payment({ navigation }) {
     const onSubmit = () => {
         return navigation.navigate('Profile')
     }
+    const clearStorage = async () => {
+        AsyncStorage.clear().then((res) => console.log(res));
+    }
     return (
         <SafeAreaView style={{ flex: 1 , alignItems: 'center'}}>
             <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start', width: '80%', marginTop: '20%'}}>
                     <Text
+                        onPress={clearStorage}
                         style={{ fontSize: 26, fontWeight: 'bold' }}>Payment Page
                     </Text>
             </SafeAreaView>  

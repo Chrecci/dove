@@ -36,11 +36,38 @@ function Profile({ navigation }) {
     const [accountInfo, setAccountInfo] = useState({});
     const [password, onChangePassword] = useState("");
     const [mnemonicInput, onChangeMnemonicInput] = useState("");
+
+    // a dummy state that can be set and changed to trigger useEffect as a dependency
+    const [trigger, setTrigger] = useState(true);
     
-    AsyncStorage.getItem('mnemonic').then(
-        // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
-        (data) => data !== null ? setMnemonic(data.slice(1, -1)) : console.log("nonexistent recipient")
-    );
+    useEffect(() => {
+        console.log(mnemonic, accountInfo)
+        AsyncStorage.getItem('mnemonic').then(
+            // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
+            (data) => {
+                if (JSON.parse(data) !== null) {
+                    setMnemonic(JSON.parse(data))
+                    console.log("SET MNEMONIC: ", mnemonic)
+                } else {
+                    console.log("something went wrong mnemonic")
+                }
+            }
+        );
+        AsyncStorage.getItem('accountInfo').then(
+            // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
+            (data) => {
+                if (JSON.parse(data) !== accountInfo) {
+                    if (JSON.parse(data) !== null && JSON.parse(data) !== {}) {
+                        setAccountInfo(JSON.parse(data))
+                        console.log("SET ACCOUNT INFO: ", accountInfo)
+                        console.log(mnemonic)
+                    } else {
+                        console.log("something went wrong")
+                    }
+                }
+            }
+        );
+       }, [trigger])
 
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
@@ -75,15 +102,28 @@ function Profile({ navigation }) {
         try {
             await AsyncStorage.getItem("mnemonic").then((data) => console.log(data));
             const jsonValue = JSON.stringify(value)
-            console.log(jsonValue)
+            console.log("storing mnemonic: ", jsonValue)
             await AsyncStorage.setItem('mnemonic', jsonValue)
-            await AsyncStorage.getItem("mnemonic").then((data) => setMnemonic(data));
+            await AsyncStorage.getItem("mnemonic").then((data) => setTrigger(!trigger));
+        } catch (e) {
+            console.log(e);
+            }
+        }
+    
+    const storeAccountInfo = async (value) => {
+        try {
+            await AsyncStorage.getItem("accountInfo").then((data) => console.log(data));
+            const jsonValue = JSON.stringify(value)
+            console.log("made it this far: ", jsonValue)
+            await AsyncStorage.setItem('accountInfo', jsonValue)
+            console.log("maybe here")
+            await AsyncStorage.getItem("accountInfo").then((data) => console.log("WOW DATA: ", data));
         } catch (e) {
             console.log(e);
             }
         }
 
-    const generateMnemonic = async () => {
+    const generateAccount = async () => {
         if (password.length >= 8) {
             const api = await connect(); 
             const keyring = new Keyring({ type: 'sr25519' });
@@ -96,8 +136,8 @@ function Profile({ navigation }) {
             }
             var {account, newMnemonic} = createAccount();
             console.log("GENERATED: ", account, newMnemonic)
+            await storeAccountInfo(account)
             await storeMnemonic(newMnemonic)
-            await setAccountInfo(account)
         } else {
             Toast.show("Password must be longer than 8 characters", 5)
         }
@@ -117,14 +157,25 @@ function Profile({ navigation }) {
     const clearStorage = async () => {
         AsyncStorage.clear().then((res) => console.log(res));
         await setMnemonic(null)
+        await setAccountInfo({})
     }
     
     return (
-        mnemonic ?
+        mnemonic && accountInfo.hasOwnProperty('address')  ?
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text
+                style={{ fontSize: 20, fontWeight: 'bold' }}>{"Mnemonic Phrase:"}
+            </Text>
+            <Text
                 onPress={clearStorage}
-                style={{ fontSize: 12, fontWeight: 'bold' }}>{mnemonic}
+                style={{ fontSize: 12, fontWeight: 'normal' }}>{mnemonic}
+            </Text>
+            <Text
+                style={{ fontSize: 20, fontWeight: 'bold' }}>{"Account Address:"}
+            </Text>
+            <Text
+                onPress={clearStorage}
+                style={{ fontSize: 12, fontWeight: 'normal'}}>{accountInfo["address"]}
             </Text>
         </View> :
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -135,7 +186,7 @@ function Profile({ navigation }) {
                 placeholder="Enter Password"
             />
             <Pressable
-                onPress={generateMnemonic}
+                onPress={generateAccount}
                 style={SubmitButtonStyle.input}
             >
                 <Text>Generate Wallet</Text>
