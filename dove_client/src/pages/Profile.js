@@ -10,6 +10,7 @@ import {
     ed25519PairFromSecret
   } from '@polkadot/util-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-simple-toast';
 
 const TextBoxStyle = StyleSheet.create({
     input: {
@@ -32,8 +33,9 @@ const SubmitButtonStyle = StyleSheet.create({
 
 function Profile({ navigation }) {
     const [mnemonic, setMnemonic] = useState("");
-    const [dummy, setDummy] = useState(true);
+    const [accountInfo, setAccountInfo] = useState({});
     const [password, onChangePassword] = useState("");
+    const [mnemonicInput, onChangeMnemonicInput] = useState("");
     const wsProvider = new WsProvider('ws://127.0.0.1:9945');
     console.log("mnemonic: ", mnemonic)
 
@@ -72,26 +74,44 @@ function Profile({ navigation }) {
             console.log(jsonValue)
             await AsyncStorage.setItem('mnemonic', jsonValue)
             await AsyncStorage.getItem("mnemonic").then((data) => setMnemonic(data));
-            setDummy(!dummy)
         } catch (e) {
             console.log(e);
             }
         }
 
     const generateMnemonic = async () => {
+        if (password.length >= 8) {
+            const api = await connect(); 
+            const keyring = new Keyring({ type: 'sr25519' });
+            const createAccount = (newMnemonic) => {
+                newMnemonic = newMnemonic && mnemonicValidate(newMnemonic) 
+                        ? newMnemonic 
+                        : mnemonicGenerate();
+                const account = keyring.addFromUri(newMnemonic, password);
+                return { account , newMnemonic };
+            }
+            var {account, newMnemonic} = createAccount();
+            console.log("GENERATED: ", account, newMnemonic)
+            await storeMnemonic(newMnemonic)
+            await setAccountInfo(account)
+        } else {
+            Toast.show("Password must be longer than 8 characters", 5)
+        }
+    }
+
+    const addExistingMnemonic = async () => {
         const api = await connect(); 
         const keyring = new Keyring({ type: 'sr25519' });
-        const createAccount = (mnemonic) => {
-            mnemonic = mnemonic && mnemonicValidate(mnemonic) 
-                    ? mnemonic 
-                    : mnemonicGenerate();
-            const account = keyring.addFromUri(mnemonic, password);
-            return { account , mnemonic };
+        if (mnemonicInput.length >= 8) {
+            console.log("ENTERED MNEMONIC: ", mnemonicInput)
+            await storeMnemonic(mnemonicInput)
+        } else {
+            Toast.show("Must enter full mnemonic phrase", 5)
         }
-        var {account, mnemonic} = createAccount();
-        console.log("GENERATED: ", account, mnemonic)
-        await storeMnemonic(mnemonic)
+
+        
     }
+
     
     return (
         mnemonic ?
@@ -109,6 +129,20 @@ function Profile({ navigation }) {
             />
             <Pressable
                 onPress={generateMnemonic}
+                style={SubmitButtonStyle.input}
+            >
+                <Text>Generate Wallet</Text>
+            </Pressable>
+            <Text style={{ fontSize: 30, fontWeight: 'bold' }}> OR </Text>
+            <TextInput
+                style={TextBoxStyle.input}
+                onChangeText={onChangeMnemonicInput}
+                value={mnemonicInput}
+                placeholder="Enter Existing Mnemonic Phrase"
+            />
+            <Text style={{ fontSize: 10, fontWeight: 'bold' }}> *make sure each word is followed by a single space, no quotes at the end* </Text>
+            <Pressable
+                onPress={addExistingMnemonic}
                 style={SubmitButtonStyle.input}
             >
                 <Text>Generate Wallet</Text>
