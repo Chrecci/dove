@@ -5,9 +5,25 @@ Completed Nicks Pallet Integration
 Completed Configure Contracts Pallet
 Completed Use Macros in a Custom Pallet (run node, go to polkadot.js https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/ , developer extrinsics to create claim (templateModule) and then developer chain state to query)
 
+# Dove Client
 
+Start Metro Bundler
+```
+cd dove_client
+react-native start
+```
 
+Start dove_client on iOS simulator
+```
+react-native run-ios
+```
 
+Install new packages
+```
+npm install <package name>
+cd ios
+pod install
+```
 
 
 # Substrate Node Template

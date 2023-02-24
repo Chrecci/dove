@@ -111,7 +111,7 @@ function Profile({ navigation }) {
                 onPress={generateMnemonic}
                 style={SubmitButtonStyle.input}
             >
-                <Text>Submit Transaction</Text>
+                <Text>Generate Wallet</Text>
             </Pressable>
         </SafeAreaView>
     );
