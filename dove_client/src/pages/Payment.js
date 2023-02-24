@@ -43,18 +43,18 @@ function Payment({ navigation }) {
     //TODO: all this should be passed down as context ideally
     // Construct
     const [address, onChangeAddress] = useState("");
-    const [amount, onChangeAmount] = useState(null);
+    const [amount, onChangeAmount] = useState(0);
     const [sender, setSender] = useState(null);
     const [recipient, setRecipient] = useState(null);
 
-    // This basically always runs looking to see if local storage still has value. If not, then resets recipient state as well, so we don't have to do it manually
+    // This basically always runs looking to see if local storage still has value. If not, then resets sender state as well, so we don't have to do it manually
     // This works really well for setting a single state. Can't set two states because they both keep triggering re-renders, breaking code
     AsyncStorage.getItem('mnemonic').then(
         // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
-        (data) => data !== null ? setRecipient(JSON.parse(data)) : setRecipient(null)
+        (data) => data !== null ? setSender(JSON.parse(data)) : setSender(null)
     );
 
-    console.log("RECIPIENT: ", recipient)
+    console.log("RECIPIENT: ", sender)
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
         const api = await ApiPromise.create({ provider: wsProvider });
@@ -84,16 +84,17 @@ function Payment({ navigation }) {
         return api
     }
     
-    async function transfer() {
-        const isValidMnemonic = mnemonicValidate(recipient);
+    // TODO: Swap out Alice for sender (signed in user). Address should be recipient
+    async function transfer(transferAmount) {
+        const isValidMnemonic = mnemonicValidate(sender);
         console.log('Mnemonic Validity: ', isValidMnemonic)
-        if (mnemonicValidate(recipient)) {
+        if (mnemonicValidate(sender)) {
             const api = await connect(); 
             const keyring = new Keyring({ type: 'sr25519' });
 
             // Add users to keyring. Alice is a known derivation
             const alice = keyring.addFromUri('//Alice')
-            const user = keyring.addFromMnemonic(recipient)
+            const user = keyring.addFromMnemonic(sender)
 
             console.log("KEYRING TRANSFER PAIRS", keyring.getPairs(), keyring.getPairs().length)
             console.log("USER ADDRESS", user["address"])
@@ -106,7 +107,7 @@ function Payment({ navigation }) {
             });
 
             // Transfer to happen
-            const transfer = api.tx.balances.transfer(user["address"], 99);
+            const transfer = api.tx.balances.transfer(user["address"], transferAmount);
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const info = await transfer
@@ -203,7 +204,7 @@ function Payment({ navigation }) {
                     keyboardType="numeric"
                 />
                 <Pressable
-                    onPress={transfer}
+                    onPress={e => transfer(amount)}
                     style={SubmitButtonStyle.input}
                 >
                     <Text>Submit Transaction</Text>

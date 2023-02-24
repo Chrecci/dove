@@ -33,6 +33,7 @@ const SubmitButtonStyle = StyleSheet.create({
     },
 });
 
+// TODO: a button to add value into account
 function Profile({ navigation }) {
     const [mnemonic, setMnemonic] = useState("");
     const [accountInfo, setAccountInfo] = useState({});
