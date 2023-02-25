@@ -54,6 +54,7 @@ function Payment({ navigation }) {
     const [amount, setAmount] = useState(0);
     const [sender, setSender] = useState(null);
     const [recipient, setRecipient] = useState(null);
+    const [trigger, setTrigger] = useState(true);
 
     // This basically always runs looking to see if local storage still has value. If not, then resets sender state as well, so we don't have to do it manually
     // This works really well for setting a single state. Can't set two states because they both keep triggering re-renders, breaking code
@@ -61,8 +62,8 @@ function Payment({ navigation }) {
         // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
         (data) => data !== null ? setSender(JSON.parse(data)) : setSender(null)
     );
-
     console.log("RECIPIENT: ", sender)
+
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
         const api = await ApiPromise.create({ provider: wsProvider });
@@ -91,9 +92,18 @@ function Payment({ navigation }) {
         );
         return api
     }
+    async function checkSignedIn() {
+        AsyncStorage.getItem('mnemonic').then(
+            // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
+            (data) => data !== null ? setSender(JSON.parse(data)) : setSender(null)
+        );
+        return;
+    }
     
     // TODO: Swap out Alice for sender (signed in user). Address should be recipient
     async function transfer(transferAmount) {
+        await checkSignedIn();
+        console.log("RECIPIENT: ", sender)
         const isValidMnemonic = mnemonicValidate(sender);
         console.log('Mnemonic Validity: ', isValidMnemonic)
         if (mnemonicValidate(sender)) {

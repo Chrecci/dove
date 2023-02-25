@@ -159,6 +159,7 @@ function Profile({ navigation }) {
             await storeAccountInfo(account)
             await storeMnemonic(newMnemonic)
             await seedWallet(newMnemonic)
+            onChangePassword('')
         } else {
             Toast.show("Password must be longer than 8 characters", 5)
         }
@@ -172,6 +173,7 @@ function Profile({ navigation }) {
             console.log("VALID MNEMONIC: ", mnemonicInput)
             await storeAccountInfo(account)
             await storeMnemonic(mnemonicInput)
+            onChangeMnemonicInput('')
         } else {
             Toast.show("Must enter a valid mnemonic", 5)
         }
@@ -181,6 +183,7 @@ function Profile({ navigation }) {
         AsyncStorage.clear().then((res) => console.log(res));
         await setMnemonic('')
         await setAccountInfo({})
+        await setBalance(0)
     }
 
     const numericInput = (text) => {
