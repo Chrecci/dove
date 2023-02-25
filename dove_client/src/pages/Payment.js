@@ -122,6 +122,7 @@ function Payment({ navigation }) {
             Toast.show("Entered address does not exist", 5)
             return;
         }
+        
         if (mnemonicValidate(sender) && isValidAddressPolkadotAddress(transferAddress)) {
             const api = await connect(); 
             const keyring = new Keyring({ type: 'sr25519' });
@@ -133,6 +134,15 @@ function Payment({ navigation }) {
             console.log("KEYRING TRANSFER PAIRS", keyring.getPairs(), keyring.getPairs().length)
             console.log("USER ADDRESS", user["address"])
             console.log("RECIPIENT ADDRESS", transferAddress)
+            var freeBalance = await getBalance(user["address"])
+            console.log("FREE BALANCE", freeBalance)
+
+            // transaction won't go through unless after transaction you have at least 10 plancks (existential deposit)
+            if (parseInt(freeBalance) < parseInt(transferAmount)+10) {
+                console.log(transferAmount+10)
+                Toast.show(`Not enough funds, you only have ${freeBalance}`, 5)
+                return;
+            }
 
             // Get account balances before transaction
             const unsub = await api.query.system.account.multi([transferAddress, user["address"]], (balances) => {
@@ -187,7 +197,17 @@ function Payment({ navigation }) {
             }
         
             console.log(" RESULTS", result)
+            await onChangeAddress('')
+            await setAmount(0)
+            Toast.show(`Success! Transaction hash: ${hash.toHex()}`, 5)
+
         } 
+    }
+    async function getBalance(address) {
+        const api = await connect(); 
+        const unsub1 = await api.query.system.account.multi([address]) 
+        console.log("GETTING BALANCES", unsub1, unsub1[0]["data"])
+        return parseInt(unsub1[0]["data"]["free"]);
     }
 
     const isValidAddressPolkadotAddress = (address) => {
