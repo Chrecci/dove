@@ -43,6 +43,16 @@ const SubmitButtonStyle = StyleSheet.create({
     },
 });
 
+const SignOutButtonStyle = StyleSheet.create({
+    input: {
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+        backgroundColor: "red",
+    },
+});
+
 // TODO: a button to add value into account
 function Profile({ navigation }) {
     const [mnemonic, setMnemonic] = useState("");
@@ -295,14 +305,12 @@ function Profile({ navigation }) {
                     style={{ fontSize: 20, fontWeight: 'bold' }}>{"Mnemonic Phrase:"}
                 </Text>
                 <Text
-                    onPress={clearStorage}
                     style={{ fontSize: 12, fontWeight: 'normal' }}>{mnemonic}
                 </Text>
                 <Text
                     style={{ fontSize: 20, fontWeight: 'bold' }}>{"Account Address:"}
                 </Text>
                 <Text
-                    onPress={clearStorage}
                     style={{ fontSize: 12, fontWeight: 'normal'}}>{accountInfo["address"]}
                 </Text>
                 
@@ -337,8 +345,18 @@ function Profile({ navigation }) {
             >
                 <Text>Load Wallet</Text>
             </Pressable>
-
-        </View> :
+            <View style={{
+                paddingTop: 60,
+                }}>
+                <Pressable
+                    onPress={clearStorage}
+                    style={SignOutButtonStyle.input}
+                >
+                    <Text>Sign Out</Text>
+                </Pressable>
+            </View>
+        </View> 
+        :
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <TextInput
                 style={TextBoxStyle.input}
