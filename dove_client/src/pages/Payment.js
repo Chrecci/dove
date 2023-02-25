@@ -28,14 +28,22 @@ const TextBoxStyle = StyleSheet.create({
         padding: 10,
     },
 });
-
+const NumericBoxStyle = StyleSheet.create({
+    input: {
+        width: 150,
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+    },
+});
 const SubmitButtonStyle = StyleSheet.create({
     input: {
         height: 40,
         margin: 12,
         borderWidth: 1,
         padding: 10,
-        backgroundColor: "green",
+        backgroundColor: "lime",
     },
 });
 
@@ -43,9 +51,10 @@ function Payment({ navigation }) {
     //TODO: all this should be passed down as context ideally
     // Construct
     const [address, onChangeAddress] = useState("");
-    const [amount, onChangeAmount] = useState(0);
+    const [amount, setAmount] = useState(0);
     const [sender, setSender] = useState(null);
     const [recipient, setRecipient] = useState(null);
+    const [trigger, setTrigger] = useState(true);
 
     // This basically always runs looking to see if local storage still has value. If not, then resets sender state as well, so we don't have to do it manually
     // This works really well for setting a single state. Can't set two states because they both keep triggering re-renders, breaking code
@@ -53,8 +62,8 @@ function Payment({ navigation }) {
         // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
         (data) => data !== null ? setSender(JSON.parse(data)) : setSender(null)
     );
-
     console.log("RECIPIENT: ", sender)
+
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
         const api = await ApiPromise.create({ provider: wsProvider });
@@ -83,12 +92,38 @@ function Payment({ navigation }) {
         );
         return api
     }
+    async function checkSignedIn() {
+        AsyncStorage.getItem('mnemonic').then(
+            // AsyncStorage stores jsonified strings, so they have quotations around them. Remove quotations
+            (data) => data !== null ? setSender(JSON.parse(data)) : setSender(null)
+        );
+        return;
+    }
     
     // TODO: Swap out Alice for sender (signed in user). Address should be recipient
-    async function transfer(transferAmount) {
+    // 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
+    // 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
+    async function transfer(transferAmount, transferAddress) {
+        await checkSignedIn();
+        console.log("SENDER: ", sender)
         const isValidMnemonic = mnemonicValidate(sender);
+        console.log(transferAmount)
+        console.log('Address Validity: ', transferAddress, isValidAddressPolkadotAddress(transferAddress))
         console.log('Mnemonic Validity: ', isValidMnemonic)
-        if (mnemonicValidate(sender)) {
+        if (transferAmount <= 0) {
+            Toast.show("Transfer amount must be greater than 0", 5)
+            return;
+        }
+        if (!mnemonicValidate(sender)) {
+            Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
+            return;
+        }
+        if (!isValidAddressPolkadotAddress(transferAddress)) {
+            Toast.show("Entered address does not exist", 5)
+            return;
+        }
+        
+        if (mnemonicValidate(sender) && isValidAddressPolkadotAddress(transferAddress)) {
             const api = await connect(); 
             const keyring = new Keyring({ type: 'sr25519' });
 
@@ -98,20 +133,30 @@ function Payment({ navigation }) {
 
             console.log("KEYRING TRANSFER PAIRS", keyring.getPairs(), keyring.getPairs().length)
             console.log("USER ADDRESS", user["address"])
+            console.log("RECIPIENT ADDRESS", transferAddress)
+            var freeBalance = await getBalance(user["address"])
+            console.log("FREE BALANCE", freeBalance)
+
+            // transaction won't go through unless after transaction you have at least 10 plancks (existential deposit)
+            if (parseInt(freeBalance) < parseInt(transferAmount)+10) {
+                console.log(transferAmount+10)
+                Toast.show(`Not enough funds, you only have ${freeBalance}`, 5)
+                return;
+            }
 
             // Get account balances before transaction
-            const unsub = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
+            const unsub = await api.query.system.account.multi([transferAddress, user["address"]], (balances) => {
                 const [{ data: balance1 }, { data: balance2 }] = balances;
             
                 console.log(`The balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()}`);
             });
 
             // Transfer to happen
-            const transfer = api.tx.balances.transfer(user["address"], transferAmount);
+            const transfer = api.tx.balances.transfer(transferAddress, transferAmount);
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const info = await transfer
-            .paymentInfo(alice);
+            .paymentInfo(user);
             console.log(`
             class=${info.class.toString()},
             weight=${info.weight.toString()},
@@ -119,12 +164,12 @@ function Payment({ navigation }) {
             `);
 
             // Sign and send the transaction using our account
-            const hash = await transfer.signAndSend(alice);
+            const hash = await transfer.signAndSend(user);
             // illness gossip weapon vast cable wet write depart angry used leaf leisure
             console.log('Transfer sent with hash', hash.toHex());
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
-            const unsub1 = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
+            const unsub1 = await api.query.system.account.multi([transferAddress, user["address"]], (balances) => {
                 const [{ data: balance1 }, { data: balance2 }] = balances;
             
                 console.log(`The new balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()}`);
@@ -152,13 +197,18 @@ function Payment({ navigation }) {
             }
         
             console.log(" RESULTS", result)
-        } else {
-            Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
-        }
-        
+            await onChangeAddress('')
+            await setAmount(0)
+            Toast.show(`Success! Transaction hash: ${hash.toHex()}`, 5)
 
+        } 
     }
-    
+    async function getBalance(address) {
+        const api = await connect(); 
+        const unsub1 = await api.query.system.account.multi([address]) 
+        console.log("GETTING BALANCES", unsub1, unsub1[0]["data"])
+        return parseInt(unsub1[0]["data"]["free"]);
+    }
 
     const isValidAddressPolkadotAddress = (address) => {
         try {
@@ -172,6 +222,11 @@ function Payment({ navigation }) {
         } catch (error) {
             return false;
         }
+    };
+    const numericInput = (text) => {
+        setAmount(
+            text.replace(/[^0-9]/g, ''),
+        );
     };
 
     const isValid = isValidAddressPolkadotAddress();
@@ -197,14 +252,15 @@ function Payment({ navigation }) {
                     placeholder="Enter Recipient Address Here"
                 />
                 <TextInput
-                    style={TextBoxStyle.input}
-                    onChangeText={onChangeAmount}
+                    style={NumericBoxStyle.input}
+                    onChangeText={numericInput}
                     value={amount}
-                    placeholder="Amount of Tokens"
-                    keyboardType="numeric"
+                    placeholder="Transfer Amount"
+                    keyboardType='numeric'
+                    maxLength={5}
                 />
                 <Pressable
-                    onPress={e => transfer(amount)}
+                    onPress={e => transfer(amount, address)}
                     style={SubmitButtonStyle.input}
                 >
                     <Text>Submit Transaction</Text>

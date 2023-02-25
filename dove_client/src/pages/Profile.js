@@ -10,6 +10,7 @@ import {
     ed25519PairFromSecret
   } from '@polkadot/util-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-simple-toast';
 const { decodeAddress, encodeAddress } = require('@polkadot/keyring');
 const { hexToU8a, isHex } = require('@polkadot/util');
@@ -23,13 +24,32 @@ const TextBoxStyle = StyleSheet.create({
         padding: 10,
     },
 });
+const NumericBoxStyle = StyleSheet.create({
+    input: {
+        width: 100,
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+    },
+});
 const SubmitButtonStyle = StyleSheet.create({
     input: {
         height: 40,
         margin: 12,
         borderWidth: 1,
         padding: 10,
-        backgroundColor: "green",
+        backgroundColor: "lime",
+    },
+});
+
+const SignOutButtonStyle = StyleSheet.create({
+    input: {
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+        backgroundColor: "red",
     },
 });
 
@@ -39,10 +59,16 @@ function Profile({ navigation }) {
     const [accountInfo, setAccountInfo] = useState({});
     const [password, onChangePassword] = useState("");
     const [mnemonicInput, onChangeMnemonicInput] = useState("");
+    const [fundAmount, setFundAmount] = useState(0);
+    const [balance, setBalance] = useState(0);
 
     // a dummy state that can be set and changed to trigger useEffect as a dependency
     const [trigger, setTrigger] = useState(true);
     
+    // useEffect(() => {
+    //     getBalance();
+    // }, [mnemonic])
+
     useEffect(() => {
         console.log(mnemonic, accountInfo)
         AsyncStorage.getItem('mnemonic').then(
@@ -70,7 +96,8 @@ function Profile({ navigation }) {
                 }
             }
         );
-       }, [trigger])
+        getBalance();
+    }, [trigger])
 
     async function connect() {
         const wsProvider = new WsProvider('ws://127.0.0.1:9945');
@@ -142,6 +169,7 @@ function Profile({ navigation }) {
             await storeAccountInfo(account)
             await storeMnemonic(newMnemonic)
             await seedWallet(newMnemonic)
+            onChangePassword('')
         } else {
             Toast.show("Password must be longer than 8 characters", 5)
         }
@@ -151,8 +179,11 @@ function Profile({ navigation }) {
         const api = await connect(); 
         const keyring = new Keyring({ type: 'sr25519' });
         if (mnemonicValidate(mnemonicInput)) {
+            var account = keyring.addFromUri(mnemonicInput, password);
             console.log("VALID MNEMONIC: ", mnemonicInput)
+            await storeAccountInfo(account)
             await storeMnemonic(mnemonicInput)
+            onChangeMnemonicInput('')
         } else {
             Toast.show("Must enter a valid mnemonic", 5)
         }
@@ -160,10 +191,35 @@ function Profile({ navigation }) {
 
     const clearStorage = async () => {
         AsyncStorage.clear().then((res) => console.log(res));
-        await setMnemonic(null)
+        await setMnemonic('')
         await setAccountInfo({})
+        await setBalance(0)
     }
-    async function seedWallet(newMnemonic) {
+
+    const numericInput = (text) => {
+        setFundAmount(
+            text.replace(/[^0-9]/g, ''),
+        );
+    };
+    async function getBalance() {
+        const isValidMnemonic = mnemonicValidate(mnemonic);
+        console.log('Mnemonic Validity: ', isValidMnemonic)
+        if (mnemonicValidate(mnemonic)) {
+            const api = await connect(); 
+            const keyring = new Keyring({ type: 'sr25519' });
+
+            // Add users to keyring. Alice is a known derivation
+            const alice = keyring.addFromUri('//Alice')
+            const user = keyring.addFromMnemonic(mnemonic)
+            const unsub1 = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
+                const [{ data: balance1 }, { data: balance2 }] = balances;
+            
+                console.log(`The new balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()}`);
+                setBalance(balance2.free)
+            });
+        }
+    }
+    async function seedWallet(newMnemonic, amount=10) {
         const isValidMnemonic = mnemonicValidate(newMnemonic);
         console.log('Mnemonic Validity: ', isValidMnemonic)
         if (mnemonicValidate(newMnemonic)) {
@@ -185,7 +241,7 @@ function Profile({ navigation }) {
             });
 
             // Transfer to happen
-            const transfer = api.tx.balances.transfer(user["address"], 10);
+            const transfer = api.tx.balances.transfer(user["address"], amount);
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const info = await transfer
@@ -201,7 +257,6 @@ function Profile({ navigation }) {
             // illness gossip weapon vast cable wet write depart angry used leaf leisure
             console.log('Transfer sent with hash', hash.toHex());
 
-            // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const unsub1 = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
                 const [{ data: balance1 }, { data: balance2 }] = balances;
             
@@ -230,6 +285,8 @@ function Profile({ navigation }) {
             }
         
             console.log(" RESULTS", result)
+            setFundAmount(0)
+
         } else {
             Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
         }
@@ -237,22 +294,69 @@ function Profile({ navigation }) {
     
     return (
         mnemonic && accountInfo.hasOwnProperty('address')  ?
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-start' }}>
+            <View style={{
+                paddingTop: 60,
+                paddingBottom: 120,
+                paddingHorizontal: 10,
+                flexDirection: "column",
+                }}>
+                <Text
+                    style={{ fontSize: 20, fontWeight: 'bold' }}>{"Mnemonic Phrase:"}
+                </Text>
+                <Text
+                    style={{ fontSize: 12, fontWeight: 'normal' }}>{mnemonic}
+                </Text>
+                <Text
+                    style={{ fontSize: 20, fontWeight: 'bold' }}>{"Account Address:"}
+                </Text>
+                <Text
+                    style={{ fontSize: 12, fontWeight: 'normal'}}>{accountInfo["address"]}
+                </Text>
+                
+            </View>
             <Text
-                style={{ fontSize: 20, fontWeight: 'bold' }}>{"Mnemonic Phrase:"}
-            </Text>
-            <Text
-                onPress={clearStorage}
-                style={{ fontSize: 12, fontWeight: 'normal' }}>{mnemonic}
-            </Text>
-            <Text
-                style={{ fontSize: 20, fontWeight: 'bold' }}>{"Account Address:"}
-            </Text>
-            <Text
-                onPress={clearStorage}
-                style={{ fontSize: 12, fontWeight: 'normal'}}>{accountInfo["address"]}
-            </Text>
-        </View> :
+                    style={{ fontSize: 20, fontWeight: 'bold' }}>{"Available Balance:"}
+                </Text>
+            <View style={{
+                paddingTop: 15,
+                paddingHorizontal: 10,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center"
+                }}>
+                <Text
+                    style={{ fontSize: 16, fontWeight: 'normal'}}>{balance.toString()}
+                </Text>
+                <Ionicons name={"refresh"} color={"green"} size={16} onPress={getBalance}></Ionicons>
+            </View>
+            <Text style={{ fontSize: 10, fontWeight: 'bold', paddingBottom: 20 }}> if showing zero please refresh </Text>
+            <TextInput
+                style={NumericBoxStyle.input}
+                keyboardType='numeric'
+                onChangeText={numericInput}
+                value={fundAmount}
+                maxLength={5}
+                placeholder="_ _ _ _ _"
+            />
+            <Pressable
+                onPress={e => seedWallet(mnemonic, fundAmount)}
+                style={SubmitButtonStyle.input}
+            >
+                <Text>Load Wallet</Text>
+            </Pressable>
+            <View style={{
+                paddingTop: 60,
+                }}>
+                <Pressable
+                    onPress={clearStorage}
+                    style={SignOutButtonStyle.input}
+                >
+                    <Text>Sign Out</Text>
+                </Pressable>
+            </View>
+        </View> 
+        :
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <TextInput
                 style={TextBoxStyle.input}
@@ -278,7 +382,7 @@ function Profile({ navigation }) {
                 onPress={addExistingMnemonic}
                 style={SubmitButtonStyle.input}
             >
-                <Text>Generate Wallet</Text>
+                <Text>Sync Wallet</Text>
             </Pressable>
         </SafeAreaView>
     );
