@@ -19,6 +19,7 @@ name = "node-template"
 [dependencies]
 clap = { version = "3.1.18", features = ["derive"] }
 bs58 = "0.4.0"
+serde_json = "1.0.1"
 
 pallet-contracts = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-contracts-rpc = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
