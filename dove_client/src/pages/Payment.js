@@ -28,14 +28,22 @@ const TextBoxStyle = StyleSheet.create({
         padding: 10,
     },
 });
-
+const NumericBoxStyle = StyleSheet.create({
+    input: {
+        width: 150,
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+    },
+});
 const SubmitButtonStyle = StyleSheet.create({
     input: {
         height: 40,
         margin: 12,
         borderWidth: 1,
         padding: 10,
-        backgroundColor: "green",
+        backgroundColor: "lime",
     },
 });
 
@@ -43,7 +51,7 @@ function Payment({ navigation }) {
     //TODO: all this should be passed down as context ideally
     // Construct
     const [address, onChangeAddress] = useState("");
-    const [amount, onChangeAmount] = useState(0);
+    const [amount, setAmount] = useState(0);
     const [sender, setSender] = useState(null);
     const [recipient, setRecipient] = useState(null);
 
@@ -158,7 +166,6 @@ function Payment({ navigation }) {
         
 
     }
-    
 
     const isValidAddressPolkadotAddress = (address) => {
         try {
@@ -172,6 +179,11 @@ function Payment({ navigation }) {
         } catch (error) {
             return false;
         }
+    };
+    const numericInput = (text) => {
+        setAmount(
+            text.replace(/[^0-9]/g, ''),
+        );
     };
 
     const isValid = isValidAddressPolkadotAddress();
@@ -197,11 +209,12 @@ function Payment({ navigation }) {
                     placeholder="Enter Recipient Address Here"
                 />
                 <TextInput
-                    style={TextBoxStyle.input}
-                    onChangeText={onChangeAmount}
+                    style={NumericBoxStyle.input}
+                    onChangeText={numericInput}
                     value={amount}
-                    placeholder="Amount of Tokens"
-                    keyboardType="numeric"
+                    placeholder="Transfer Amount"
+                    keyboardType='numeric'
+                    maxLength={5}
                 />
                 <Pressable
                     onPress={e => transfer(amount)}

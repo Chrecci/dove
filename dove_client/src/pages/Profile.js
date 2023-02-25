@@ -23,13 +23,22 @@ const TextBoxStyle = StyleSheet.create({
         padding: 10,
     },
 });
+const NumericBoxStyle = StyleSheet.create({
+    input: {
+        width: 100,
+        height: 40,
+        margin: 12,
+        borderWidth: 1,
+        padding: 10,
+    },
+});
 const SubmitButtonStyle = StyleSheet.create({
     input: {
         height: 40,
         margin: 12,
         borderWidth: 1,
         padding: 10,
-        backgroundColor: "green",
+        backgroundColor: "lime",
     },
 });
 
@@ -39,6 +48,7 @@ function Profile({ navigation }) {
     const [accountInfo, setAccountInfo] = useState({});
     const [password, onChangePassword] = useState("");
     const [mnemonicInput, onChangeMnemonicInput] = useState("");
+    const [fundAmount, setFundAmount] = useState(0);
 
     // a dummy state that can be set and changed to trigger useEffect as a dependency
     const [trigger, setTrigger] = useState(true);
@@ -163,7 +173,14 @@ function Profile({ navigation }) {
         await setMnemonic(null)
         await setAccountInfo({})
     }
-    async function seedWallet(newMnemonic) {
+
+    const numericInput = (text) => {
+        setFundAmount(
+            text.replace(/[^0-9]/g, ''),
+        );
+    };
+
+    async function seedWallet(newMnemonic, amount=10) {
         const isValidMnemonic = mnemonicValidate(newMnemonic);
         console.log('Mnemonic Validity: ', isValidMnemonic)
         if (mnemonicValidate(newMnemonic)) {
@@ -185,7 +202,7 @@ function Profile({ navigation }) {
             });
 
             // Transfer to happen
-            const transfer = api.tx.balances.transfer(user["address"], 10);
+            const transfer = api.tx.balances.transfer(user["address"], amount);
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const info = await transfer
@@ -230,6 +247,8 @@ function Profile({ navigation }) {
             }
         
             console.log(" RESULTS", result)
+            setFundAmount(0)
+
         } else {
             Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
         }
@@ -252,6 +271,22 @@ function Profile({ navigation }) {
                 onPress={clearStorage}
                 style={{ fontSize: 12, fontWeight: 'normal'}}>{accountInfo["address"]}
             </Text>
+            <Text style={{ fontSize: 10, fontWeight: 'bold' }}>  </Text>
+            <TextInput
+                style={NumericBoxStyle.input}
+                keyboardType='numeric'
+                onChangeText={numericInput}
+                value={fundAmount}
+                maxLength={5}
+                placeholder="_ _ _ _ _"
+            />
+            <Pressable
+                onPress={e => seedWallet(mnemonic, fundAmount)}
+                style={SubmitButtonStyle.input}
+            >
+                <Text>Load Wallet</Text>
+            </Pressable>
+
         </View> :
         <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <TextInput

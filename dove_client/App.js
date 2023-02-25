@@ -52,7 +52,7 @@ function App() {
             // You can return any component that you like here!
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: 'tomato',
+          tabBarActiveTintColor: 'lightskyblue',
           tabBarInactiveTintColor: 'grey',
           tabBarStyle: {
             paddingVertical: Platform.OS === 'ios' ? 10 : 0,
