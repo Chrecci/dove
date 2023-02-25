@@ -77,3 +77,12 @@ Secret phrase:       wall ten universe culture gift video unaware basic farm tri
 ```
 
 std vs no_std, std is native Rust binary, assumes you have stuff like memory, normal computer stuff. no_std is compiling for wasm
+
+
+
+
+Completed multi-nodes
+Completed analytics Grafana
+Completed Nicks Pallet Integration
+Completed Configure Contracts Pallet
+Completed Use Macros in a Custom Pallet (run node, go to polkadot.js https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/ , developer extrinsics to create claim (templateModule) and then developer chain state to query)

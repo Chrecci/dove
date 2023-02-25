@@ -1,10 +1,4 @@
 
-Completed multi-nodes
-Completed analytics Grafana
-Completed Nicks Pallet Integration
-Completed Configure Contracts Pallet
-Completed Use Macros in a Custom Pallet (run node, go to polkadot.js https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/ , developer extrinsics to create claim (templateModule) and then developer chain state to query)
-
 # Dove Client
 
 Start Metro Bundler
@@ -23,6 +17,13 @@ Install new packages
 npm install <package name>
 cd ios
 pod install
+```
+
+Test Account
+```
+Address: 5FsDAeea7EYXkK74N9nxJu8WWWZvDUCxgEckqHnU2uRSpVVx
+Mnemonic: "pact habit super crew cloth radio worth payment mask early flee hungry"
+Recipient Address: 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
 ```
 
 

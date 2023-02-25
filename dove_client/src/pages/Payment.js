@@ -101,12 +101,28 @@ function Payment({ navigation }) {
     }
     
     // TODO: Swap out Alice for sender (signed in user). Address should be recipient
-    async function transfer(transferAmount) {
+    // 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
+    // 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
+    async function transfer(transferAmount, transferAddress) {
         await checkSignedIn();
-        console.log("RECIPIENT: ", sender)
+        console.log("SENDER: ", sender)
         const isValidMnemonic = mnemonicValidate(sender);
+        console.log(transferAmount)
+        console.log('Address Validity: ', transferAddress, isValidAddressPolkadotAddress(transferAddress))
         console.log('Mnemonic Validity: ', isValidMnemonic)
-        if (mnemonicValidate(sender)) {
+        if (transferAmount <= 0) {
+            Toast.show("Transfer amount must be greater than 0", 5)
+            return;
+        }
+        if (!mnemonicValidate(sender)) {
+            Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
+            return;
+        }
+        if (!isValidAddressPolkadotAddress(transferAddress)) {
+            Toast.show("Entered address does not exist", 5)
+            return;
+        }
+        if (mnemonicValidate(sender) && isValidAddressPolkadotAddress(transferAddress)) {
             const api = await connect(); 
             const keyring = new Keyring({ type: 'sr25519' });
 
@@ -116,20 +132,21 @@ function Payment({ navigation }) {
 
             console.log("KEYRING TRANSFER PAIRS", keyring.getPairs(), keyring.getPairs().length)
             console.log("USER ADDRESS", user["address"])
+            console.log("RECIPIENT ADDRESS", transferAddress)
 
             // Get account balances before transaction
-            const unsub = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
+            const unsub = await api.query.system.account.multi([transferAddress, user["address"]], (balances) => {
                 const [{ data: balance1 }, { data: balance2 }] = balances;
             
                 console.log(`The balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()}`);
             });
 
             // Transfer to happen
-            const transfer = api.tx.balances.transfer(user["address"], transferAmount);
+            const transfer = api.tx.balances.transfer(transferAddress, transferAmount);
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
             const info = await transfer
-            .paymentInfo(alice);
+            .paymentInfo(user);
             console.log(`
             class=${info.class.toString()},
             weight=${info.weight.toString()},
@@ -137,12 +154,12 @@ function Payment({ navigation }) {
             `);
 
             // Sign and send the transaction using our account
-            const hash = await transfer.signAndSend(alice);
+            const hash = await transfer.signAndSend(user);
             // illness gossip weapon vast cable wet write depart angry used leaf leisure
             console.log('Transfer sent with hash', hash.toHex());
 
             // Get estimated transaction fee pre-transaction (should be 0 partial fee)
-            const unsub1 = await api.query.system.account.multi(['5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY', user["address"]], (balances) => {
+            const unsub1 = await api.query.system.account.multi([transferAddress, user["address"]], (balances) => {
                 const [{ data: balance1 }, { data: balance2 }] = balances;
             
                 console.log(`The new balances are ${balance1.free.toHuman()} and ${balance2.free.toHuman()}`);
@@ -170,11 +187,7 @@ function Payment({ navigation }) {
             }
         
             console.log(" RESULTS", result)
-        } else {
-            Toast.show("You are not signed in yet! Please either create a wallet from profile page or add existing one using your mnemonic", 5)
-        }
-        
-
+        } 
     }
 
     const isValidAddressPolkadotAddress = (address) => {
@@ -227,7 +240,7 @@ function Payment({ navigation }) {
                     maxLength={5}
                 />
                 <Pressable
-                    onPress={e => transfer(amount)}
+                    onPress={e => transfer(amount, address)}
                     style={SubmitButtonStyle.input}
                 >
                     <Text>Submit Transaction</Text>
