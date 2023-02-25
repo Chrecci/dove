@@ -1,6 +1,72 @@
+# Start DOVE Substrate Chain
+
+DOVE is built on Substrate & Rust. Follow instructions below to get started. 
+
+### Rust & Substrate Setup
+
+First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
+
+### Build
+
+The `cargo run` command will perform an initial build. Use the following command to build the node
+without launching it:
+
+```sh
+cargo build --release
+```
+
+Check health of rust repository
+```sh
+cargo check -p node-template-runtime --release
+```
+
+### Run
+
+Start Alice Validator Node in one terminal
+
+```sh
+./target/release/node-template \
+--chain=local \
+--base-path /tmp/validator1 \
+--alice \
+--node-key=c12b6d18942f5ee8528c8e2baf4e147b5c5c18710926ea492d09cbd9f6c9f82a \
+--port 30333 \
+--ws-port 9944
+```
+
+Start Bob Validator Node in a separate terminal. They should be able to discover each other (dove_client connects to Bob via WebSocket)
+```sh
+./target/release/node-template \
+--chain=local \
+--base-path /tmp/validator2 \
+--bob \
+--node-key=6ce3be907dbcabf20a9a5a60a712b4256a54196000a8ed4050d352bc113f8c58 \
+--port 30334 \
+--ws-port 9945
+```
+
+CTRL/CMD+C to terminate running chain
+
 
 # Dove Client
 
+dove_client is built using react-native, and currently only available for iOS development.
+
+### Install
+https://reactnative.dev/docs/environment-setup
+
+Install yarn
+```
+cd dove_client
+npm install -g yarn
+```
+
+Install dove_client
+```
+npm install
+```
+
+### Run React-Native App
 Start Metro Bundler
 ```
 cd dove_client
@@ -26,47 +92,7 @@ Mnemonic: "pact habit super crew cloth radio worth payment mask early flee hungr
 Recipient Address: 5HgiF5r1ivVe3CzhiPsuuDVR2Pi5WifBh3mTSEPTwVuAvkKj
 ```
 
-
-# Substrate Node Template
-
-[![Try on playground](https://img.shields.io/badge/Playground-Node_Template-brightgreen?logo=Parity%20Substrate)](https://docs.substrate.io/playground/) [![Matrix](https://img.shields.io/matrix/substrate-technical:matrix.org)](https://matrix.to/#/#substrate-technical:matrix.org)
-
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
-
-## Getting Started
-
-Follow the steps below to get started with the Node Template, or get it up and running right from
-your browser in just a few clicks using
-the [Substrate Playground](https://docs.substrate.io/playground/) :hammer_and_wrench:
-
-### Using Nix
-
-Install [nix](https://nixos.org/) and optionally [direnv](https://github.com/direnv/direnv) and
-[lorri](https://github.com/nix-community/lorri) for a fully plug and play experience for setting up
-the development environment. To get all the correct dependencies activate direnv `direnv allow` and
-lorri `lorri shell`.
-
-### Rust Setup
-
-First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
-
-### Run
-
-Use Rust's native `cargo` command to build and launch the template node:
-
-```sh
-cargo run --release -- --dev
-```
-
-### Build
-
-The `cargo run` command will perform an initial build. Use the following command to build the node
-without launching it:
-
-```sh
-cargo build --release
-```
-
+# Other Default Instructions
 ### Embedded Docs
 
 Once the project has been built, the following command can be used to explore all parameters and
