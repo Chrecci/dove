@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 
+pallet-custom-account-type = { default-features = false, path = "../pallets/custom_account_type" }
 pallet-nicks = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-contracts = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-contracts-primitives = { default-features = false, version = "6.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -97,6 +98,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-contracts-primitives/std",
 	"pallet-contracts-rpc-runtime-api/std",
+	"pallet-custom-account-type/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

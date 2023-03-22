@@ -4,6 +4,7 @@ members = [
     # changed from pallets/template
     "pallets/custom",
     "runtime",
+    "pallets/custom_account_type"
 ]
 [profile.release]
 panic = "unwind"
