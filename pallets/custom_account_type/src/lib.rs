@@ -1,5 +1,7 @@
 // https://docs.substrate.io/tutorials/work-with-pallets/specify-the-origin-for-a-call/
 // https://docs.substrate.io/tutorials/collectibles-workshop/08-add-collectibles-to-runtime/
+// https://docs.substrate.io/tutorials/collectibles-workshop/05-add-storage-items/
+// https://paritytech.github.io/substrate/master/frame_support/storage/trait.StorageMap.html
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::traits::{Currency, OnUnbalanced, ReservableCurrency};
@@ -72,6 +74,10 @@ pub mod pallet {
 	}
 
 	/// The lookup table for names.
+	/*
+	"By using a BoundedVec, you can ensure that each storage item has a maximum length, which is important for managing limits within the runtime"
+	"The key for this storage map is a user account: T::AccountID. The value for this storage map is a BoundedVec data type with the unique_id of each collectible that each user account owns"
+	*/
 	#[pallet::storage]
 	pub(super) type NameOf<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, (BoundedVec<u8, T::MaxLength>, BalanceOf<T>)>;
